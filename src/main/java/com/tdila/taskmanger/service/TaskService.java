@@ -23,15 +23,24 @@ public class TaskService {
         TaskPredictionRequest predictionRequest =
                 new TaskPredictionRequest(request.getTitle(), request.getDescription());
 
-        TaskPredictionResponse prediction = webClient.post()
-                .uri("/predict")
-                .bodyValue(predictionRequest)
-                .retrieve()
-                .bodyToMono(TaskPredictionResponse.class)
-                .block();
+        String priority = "MEDIUM";
+        Double time = 2.0;
 
-        String priority = prediction.getPriority();
-        Double time = prediction.getEstimatedTime();
+        try {
+            TaskPredictionResponse prediction = webClient.post()
+                    .uri("/predict")
+                    .bodyValue(predictionRequest)
+                    .retrieve()
+                    .bodyToMono(TaskPredictionResponse.class)
+                    .block();
+
+            if (prediction != null) {
+                priority = prediction.getPriority();
+                time = prediction.getEstimatedTime();
+            }
+        }catch (Exception e){
+            System.err.println("ML service unavailable, using default prediction.");
+        }
 
         Task task = Task.builder()
                 .title(request.getTitle())
