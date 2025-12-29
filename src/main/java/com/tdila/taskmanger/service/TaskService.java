@@ -1,6 +1,8 @@
 package com.tdila.taskmanger.service;
 
 import com.tdila.taskmanger.dto.TaskCreateRequest;
+import com.tdila.taskmanger.dto.TaskPredictionRequest;
+import com.tdila.taskmanger.dto.TaskPredictionResponse;
 import com.tdila.taskmanger.model.Task;
 import com.tdila.taskmanger.repository.TaskRepository;
 import lombok.RequiredArgsConstructor;
@@ -9,7 +11,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import java.time.LocalDateTime;
-import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -19,15 +20,18 @@ public class TaskService {
 
     @Transactional
     public Task createTask(TaskCreateRequest request){
-        Map<String, Object> response = webClient.post()
+        TaskPredictionRequest predictionRequest =
+                new TaskPredictionRequest(request.getTitle(), request.getDescription());
+
+        TaskPredictionResponse prediction = webClient.post()
                 .uri("/predict")
-                .bodyValue(request)
+                .bodyValue(predictionRequest)
                 .retrieve()
-                .bodyToMono(Map.class)
+                .bodyToMono(TaskPredictionResponse.class)
                 .block();
 
-        String priority = (String) response.get("priority");
-        Double time = ((Number) response.get("estimated_time")).doubleValue();
+        String priority = prediction.getPriority();
+        Double time = prediction.getEstimatedTime();
 
         Task task = Task.builder()
                 .title(request.getTitle())
